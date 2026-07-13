@@ -1,0 +1,205 @@
+{% extends 'base.html' %}
+
+{% block title %}
+    {% if form.instance.pk %}Редактирование записи{% else %}Новая запись{% endif %}
+{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h3>
+                    {% if form.instance.pk %}
+                        <i class="bi bi-pencil-square"></i> Редактирование записи
+                    {% else %}
+                        <i class="bi bi-plus-circle"></i> Новая запись
+                    {% endif %}
+                </h3>
+            </div>
+            <div class="card-body">
+                <form method="post" id="record-form">
+                    {% csrf_token %}
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="{{ form.date.id_for_label }}" class="form-label">
+                                    Дата <span class="text-danger">*</span>
+                                </label>
+                                {{ form.date }}
+                                {% if form.date.errors %}
+                                    <div class="text-danger small">{{ form.date.errors }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="{{ form.status.id_for_label }}" class="form-label">
+                                    Статус <span class="text-danger">*</span>
+                                </label>
+                                {{ form.status }}
+                                {% if form.status.errors %}
+                                    <div class="text-danger small">{{ form.status.errors }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="{{ form.type.id_for_label }}" class="form-label">
+                                    Тип <span class="text-danger">*</span>
+                                </label>
+                                {{ form.type }}
+                                {% if form.type.errors %}
+                                    <div class="text-danger small">{{ form.type.errors }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="{{ form.amount.id_for_label }}" class="form-label">
+                                    Сумма (руб.) <span class="text-danger">*</span>
+                                </label>
+                                {{ form.amount }}
+                                {% if form.amount.errors %}
+                                    <div class="text-danger small">{{ form.amount.errors }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    
+                    <div id="category-section">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="{{ form.category.id_for_label }}" class="form-label">
+                                        Категория <span id="category-required" class="text-danger" style="display:none;">*</span>
+                                    </label>
+                                    {{ form.category }}
+                                    {% if form.category.errors %}
+                                        <div class="text-danger small">{{ form.category.errors }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="{{ form.subcategory.id_for_label }}" class="form-label">
+                                        Подкатегория <span id="subcategory-required" class="text-danger" style="display:none;">*</span>
+                                    </label>
+                                    {{ form.subcategory }}
+                                    {% if form.subcategory.errors %}
+                                        <div class="text-danger small">{{ form.subcategory.errors }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="{{ form.comment.id_for_label }}" class="form-label">
+                            Комментарий
+                        </label>
+                        {{ form.comment }}
+                        {% if form.comment.errors %}
+                            <div class="text-danger small">{{ form.comment.errors }}</div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="d-flex justify-content-between">
+                        <a href="{% url 'records:record_list' %}" class="btn btn-secondary">
+                            <i class="bi bi-arrow-left"></i> Отмена
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-save"></i> Сохранить
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    
+    function toggleCategoryFields() {
+        var typeSelect = $('#id_type');
+        var selectedType = typeSelect.find('option:selected').text();
+        var categorySection = $('#category-section');
+        var categoryRequired = $('#category-required');
+        var subcategoryRequired = $('#subcategory-required');
+        
+        if (selectedType === 'Списание') {
+            categorySection.show();
+            categoryRequired.show();
+            subcategoryRequired.show();
+            $('#id_category').prop('required', true);
+            $('#id_subcategory').prop('required', true);
+        } else {
+            categorySection.hide();
+            categoryRequired.hide();
+            subcategoryRequired.hide();
+            $('#id_category').prop('required', false);
+            $('#id_subcategory').prop('required', false);
+            
+            $('#id_category').val('');
+            $('#id_subcategory').val('');
+        }
+    }
+
+    
+    toggleCategoryFields();
+
+    
+    $('#id_type').change(function() {
+        toggleCategoryFields();
+        var typeId = $(this).val();
+        if (typeId) {
+            $.ajax({
+                url: '{% url "records:get_categories" %}',
+                data: { 'type_id': typeId },
+                success: function(data) {
+                    var categorySelect = $('#id_category');
+                    categorySelect.empty();
+                    categorySelect.append('<option value="">---------</option>');
+                    $.each(data, function(index, category) {
+                        categorySelect.append('<option value="' + category.id + '">' + category.name + '</option>');
+                    });
+                    $('#id_subcategory').empty().append('<option value="">---------</option>');
+                }
+            });
+        }
+    });
+
+    $('#id_category').change(function() {
+        var categoryId = $(this).val();
+        if (categoryId) {
+            $.ajax({
+                url: '{% url "records:get_subcategories" %}',
+                data: { 'category_id': categoryId },
+                success: function(data) {
+                    var subcategorySelect = $('#id_subcategory');
+                    subcategorySelect.empty();
+                    subcategorySelect.append('<option value="">---------</option>');
+                    $.each(data, function(index, subcategory) {
+                        subcategorySelect.append('<option value="' + subcategory.id + '">' + subcategory.name + '</option>');
+                    });
+                }
+            });
+        }
+    });
+
+    
+    var initialType = $('#id_type').val();
+    if (initialType) {
+        $('#id_type').trigger('change');
+    }
+});
+</script>
+{% endblock %}

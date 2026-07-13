@@ -1,0 +1,39 @@
+{% extends 'base.html' %}
+
+{% block title %}Удаление категории{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-danger text-white">
+                <h3><i class="bi bi-exclamation-triangle"></i> Подтверждение удаления</h3>
+            </div>
+            <div class="card-body">
+                <p class="lead">Вы уверены, что хотите удалить категорию <strong>"{{ object.name }}"</strong>?</p>
+                
+                {% if object.cashflowrecord_set.exists or object.subcategories.exists %}
+                    <div class="alert alert-warning">
+                        <i class="bi bi-exclamation-triangle-fill"></i>
+                        <strong>Внимание!</strong> Эта категория используется в записях или имеет связанные подкатегории. 
+                        Удаление невозможно, пока она используется.
+                    </div>
+                {% endif %}
+                
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="d-flex gap-2">
+                        <a href="{% url 'directories:category_list' %}" class="btn btn-secondary">
+                            <i class="bi bi-arrow-left"></i> Отмена
+                        </a>
+                        <button type="submit" class="btn btn-danger" 
+                                {% if object.cashflowrecord_set.exists or object.subcategories.exists %}disabled{% endif %}>
+                            <i class="bi bi-trash"></i> Удалить
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
